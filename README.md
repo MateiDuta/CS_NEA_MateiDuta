@@ -1,1 +1,2 @@
-# CS_NEA_MateiDuta
+# Computer Science Non-Exam Assessment
+## Matei Duta
