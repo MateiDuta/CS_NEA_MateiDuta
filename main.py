@@ -1,8 +1,9 @@
 import sys, pygame, math
 import sim_spike
-import draft_sim
+import draft_sim2
+
 
 if __name__ == '__main__':
 
-    draft_sim.run1()
+    draft_sim2()
 

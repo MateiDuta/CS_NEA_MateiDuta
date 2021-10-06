@@ -1,5 +1,6 @@
 from vpython import *
 
+
 # GlowScript 2.7 VPython
 
 
@@ -10,7 +11,7 @@ m_s = 2000  # mass of the star
 r_s = 2  # radius of the star
 m_p = 1  # mass of the planet
 r_p = 0.5  # radius of the planet
-dt = 0.0001  # time increment
+dt = 0.001  # time increment
 
 """class particle:
     def __init__(self, o_x, o_y, o_z, o_r, color, m_o):
@@ -23,7 +24,7 @@ dt = 0.0001  # time increment
 
 
 def initialise_objects():
-    global star, planet
+    global star, planet, force_arrow_p, force_arrow_s
 
     star = sphere(pos=vector(0, 0, 0), radius=r_s, color=color.yellow,
                   mass=m_s, momentum=vector(0, 0, 0), make_trail=True, emissive=True, texture={'file':textures.metal})
@@ -31,9 +32,13 @@ def initialise_objects():
     planet = sphere(pos=vector(0, 0, 10), radius=r_p,
                     mass=m_p, momentum=vector(10, 10, 0), make_trail=True, texture={'file':textures.earth})
 
+    force_arrow_p = arrow(pos=planet.pos, color=color.green, axis=vector(0, 0, 0), emissive=True)
+    force_arrow_s = arrow(pos=star.pos, color=color.red, axis=vector(0, 0, 0), emissive=True)
+
     local_light(pos=star.pos, color=color.white)
 
     scene.ambient = color.gray(0)
+
 def restart_objects(b):
     global star, planet, m_s, r_s, m_p, r_p
 
@@ -42,7 +47,7 @@ def restart_objects(b):
     star.momentum = vector(0, 0, 0)
     m_s = 2000  # mass of the star
     r_s = 2
-
+    scene.camera.follow(planet)
     planet.clear_trail()
     planet.pos = vector(0, 0, 10)
     planet.momentum = vector(10, 10, 0)
@@ -103,17 +108,17 @@ def edit_mplanet(s):
 
 b_startstop = button(bind=button_startstop, text='STOP')
 b_restart = button(bind=restart_objects, text='RESTART')
-scene.append_to_caption('\nStar radius ')
+scene.append_to_caption('\nStar radius\n ')
 e_rstar = slider(bind=edit_rstar, min=0, max=10)
 
 # winput(bind=edit_rstar, disabled=True)
 
-scene.append_to_caption('\nStar mass ')
+scene.append_to_caption('\nStar mass\n ')
 e_mstar = slider(bind=edit_mstar, min=1000, max=10000)
 
-scene.append_to_caption('\nPlanet radius ')
+scene.append_to_caption('\nPlanet radius\n ')
 e_rplanet = slider(bind=edit_rplanet, min=0, max=10)
-scene.append_to_caption('\nPlanet mass   ')
+scene.append_to_caption('\nPlanet mass\n ')
 e_mplanet = slider(bind=edit_mplanet, min=1, max=10)
 
 
@@ -122,6 +127,7 @@ e_mplanet = slider(bind=edit_mplanet, min=1, max=10)
 # https://www.glowscript.org/#/user/GlowScriptDemos/folder/Examples/program/ButtonsSlidersMenus-VPython
 # https://www.glowscript.org/docs/VPythonDocs/controls.html
 def gforce(p1, p2):
+    global force_arrow_p, force_arrow_s
     # Modelled using euler cromer method
     # Calculate the gravitational force exerted on p1 by p2.
     G = 1  # Change to 6.67e-11 to use real-world values.
@@ -135,6 +141,10 @@ def gforce(p1, p2):
     force_mag = G * p1.mass * p2.mass / r_mag ** 2
     # Calculate force vector.
     force_vec = -force_mag * r_hat
+    if p1 == planet:
+        force_arrow_p.axis = -log(force_mag,4) * r_hat
+    else:
+        force_arrow_s.axis = -log(force_mag,4) * r_hat
 
     return force_vec
 
@@ -169,7 +179,7 @@ def run1():
     while True:
         if running:
             # limit the animation rate
-            rate(1000)
+            rate(64)
 
             # Calculate forces.
             star.force = gforce(star, planet)
@@ -182,6 +192,8 @@ def run1():
             # Update positions using (equation 1)
             star.pos = star.pos + (star.momentum * dt) / star.mass
             planet.pos = planet.pos + (planet.momentum * dt) / planet.mass
+            force_arrow_p.pos = planet.pos
+            force_arrow_s.pos = star.pos
 
             planet.rotate(angle=10 * dt, axis=vector(0, 1, 0))
 
