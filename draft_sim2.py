@@ -1,4 +1,5 @@
 import vpython as vp
+from random import choice
 
 
 class Particle:
@@ -17,29 +18,91 @@ class Particle:
 
         self.lamp = vp.local_light(pos=self.particle_model.pos, colour=vp.color.white)
 
-        if not emissive:
+        self.is_emissive()
+
+
+    def is_emissive(self):
+        if self.particle_model.emissive:
+            self.lamp.visible = True
+        else:
             self.lamp.visible = False
 
+    def make_widgets(self):
+        self.m_type = vp.menu(bind=self.menu_type, choices=['Choose a type', 'Star', 'Earth', 'Planet', 'Moon'])
 
-"""class ParticleWidgetList:
-    def __init__(self, parent):
-        self.m_type = vp.menu(bind=self.menu_type, choices=['Choose a type', 'Star', 'Earth', 'Planet', 'Moon'], text='TYPE')
+        vp.scene.append_to_caption('   Pos: X')
+        self.w_posx = vp.winput(bind=self.change_posx, text=0)
+        vp.scene.append_to_caption('Y')
+        self.w_posy = vp.winput(bind=self.change_posy, text=0)
+        vp.scene.append_to_caption('Z')
+        self.w_posz = vp.winput(bind=self.change_posz, text=0)
 
-    def menu_type(self,m):
+        vp.scene.append_to_caption('   Vel: X')
+        self.w_velx = vp.winput(bind=self.change_velx, text=0)
+        vp.scene.append_to_caption('Y')
+        self.w_vely = vp.winput(bind=self.change_vely, text=0)
+        vp.scene.append_to_caption('Z')
+        self.w_velz = vp.winput(bind=self.change_velz, text=0)
+
+        vp.scene.append_to_caption('   Mass:')
+        self.w_mass = vp.winput(bind=self.change_mass, text=self.particle_model.mass)
+
+    def delete_widgets(self):
+        self.m_type.delete()
+
+    def menu_type(self, m):
         val = m.selected
         if val == "Star":
-            pass
+            self.particle_model.color = vp.color.yellow
+            self.particle_model.emissive = True
+            self.is_emissive()
+            self.particle_model.texture = {'file': vp.textures.metal}
+
         elif val == "Earth":
-            pass
+            self.particle_model.color = vp.color.white
+            self.particle_model.emissive = False
+            self.is_emissive()
+            self.particle_model.texture = {'file':vp.textures.earth}
+
         elif val == "Planet":
-            pass
+            self.particle_model.color = choice([vp.color.red, vp.color.green, vp.color.cyan, vp.color.orange, vp.color.cyan])
+            self.particle_model.emissive = False
+            self.is_emissive()
+            self.particle_model.texture = {'file': vp.textures.wood}
+
         elif val == "Moon":
-            pass
-"""
+            self.particle_model.color = vp.color.white
+            self.particle_model.emissive = False
+            self.is_emissive()
+            self.particle_model.texture = {'file': vp.textures.rough}
 
+    def change_posx(self, w):
+        if type(w.number) == int:
+            self.particle_model.pos.x = w.number
 
+    def change_posy(self, w):
+        if type(w.number) == int:
+            self.particle_model.pos.y = w.number
 
+    def change_posz(self, w):
+        if type(w.number) == int:
+            self.particle_model.pos.z = w.number
 
+    def change_velx(self, w):
+        if type(w.number) == int:
+            self.particle_model.momentum.x = w.number * self.particle_model.mass
+
+    def change_vely(self, w):
+        if type(w.number) == int:
+            self.particle_model.momentum.y = w.number * self.particle_model.mass
+
+    def change_velz(self, w):
+        if type(w.number) == int:
+            self.particle_model.momentum.z = w.number * self.particle_model.mass
+
+    def change_mass(self, w):
+        if type(w.number) == int:
+            self.particle_model.mass = w.number
 
 class Simulation:
     def __init__(self):
@@ -49,7 +112,7 @@ class Simulation:
         # Initialised value of newtons gravitational constant, 6.67e-11 to use real-world value.
         self.G = 1
 
-        self.focus = None  # index in particlelist to the planet that the planet follows
+        self.focus = 0  # index in particlelist to the planet that the planet follows
         self.running = None
         self.particlelist = []
         self.shininess = 1000
@@ -61,45 +124,53 @@ class Simulation:
         # Controls for the user interface
         # TODO: add description to each button for clarity
         vp.scene.append_to_caption('\n\n')
+
         # - start/stop the simulation
-        self.b_startstop = vp.button(bind=self.button_startstop, text='STOP')
-        vp.scene.append_to_caption('&nbsp;&nbsp;')
+        self.b_startstop = vp.button(bind=self.button_startstop, text='⏸')
+        vp.scene.append_to_caption('  ')
+
         # - restart the simulation, does not work; TODO: implement
         self.b_restart = vp.button(bind=self.button_restart, text='RESTART')
-        vp.scene.append_to_caption('&nbsp;&nbsp;')
+        vp.scene.append_to_caption('  ')
+
         # - cycle through the planet that the camera follows
         self.b_camera = vp.button(bind=self.camera_follow, text='SWITCH CAMERA FOCUS')
-        vp.scene.append_to_caption('&nbsp;&nbsp;')
+        vp.scene.append_to_caption('  ')
+
         # - toggle the visibility of the trails
         self.b_trails = vp.checkbox(bind=self.button_trails, text='HIDE TRAILS')
-        vp.scene.append_to_caption('&nbsp;&nbsp;&nbsp;&nbsp;')
+        vp.scene.append_to_caption('  ')
+
         # - toggle the drawing of gravitational force vectors
         self.b_force = vp.checkbox(bind=self.button_force_arrows, text='HIDE FORCES')
-        vp.scene.append_to_caption('&nbsp;&nbsp;&nbsp;&nbsp;')
+        vp.scene.append_to_caption('  ')
+
         # - toggles the drawing of velocity vectors
         self.b_velocity = vp.checkbox(bind=self.button_velocity_arrows, text='HIDE VELOCITIES')
         vp.scene.append_to_caption('\n\n')
+
         # - sets the level of ambient light
-        s_ambientlight = vp.slider(bind=self.slider_ambient_lights, min=0, max=1, left=0, length=200)
-        vp.scene.append_to_caption('Ambient light&nbsp;&nbsp;&nbsp;&nbsp;')
+        self.s_ambientlight = vp.slider(bind=self.slider_ambient_lights, min=0, max=1, left=0, length=200, value=0.5)
+        vp.scene.append_to_caption('Ambient light   | ')
 
         # - allow to change the value for G
-        w_big_g_value = vp.winput(bind=self.winput_g, text=1)
-        vp.scene.append_to_caption("&nbsp;&nbsp;&nbsp;&nbsp;Gravitational constant G; real value: 6.67e-11")
+        self.w_big_g_value = vp.winput(bind=self.winput_g, text=1)
+        vp.scene.append_to_caption("  Gravitational constant G; real value: 6.67e-11")
 
-        vp.scene.append_to_caption('\n\n')
-        self.b_add = vp.button(bind=self.button_add, text='ADD PLANET')
-        vp.scene.append_to_caption('&nbsp;&nbsp;&nbsp;&nbsp;')
+        vp.scene.append_to_caption('\n\n══════════════════════════════════════════════════════════════════════════\n\n')
 
-        self.m_menu = vp.menu(bind=self.menu_choose, choices=['Choose an object to configure'])
+        self.b_add = vp.button(bind=self.button_add, text='ADD PARTICLE')
+
+
+
 
     def button_startstop(self, b):
         # toggles the running state
         self.running = not self.running
         if self.running:
-            self.b_startstop.text = 'STOP'
+            self.b_startstop.text = '⏸️'
         else:
-            self.b_startstop.text = "START"
+            self.b_startstop.text = "▶️"
 
     def button_restart(self, b):
         # TODO: implement
@@ -138,11 +209,26 @@ class Simulation:
             self.G = w.number
 
     def button_add(self, b):
-        pass
+        self.running = False
+        self.b_startstop.text = "▶️"
 
-    def menu_type(self, m):
-        val = m.selected
-        pass
+        self.b_add.delete()
+
+        new_particle = Particle(vp.vector(0, 0, 0), 1, 1000, vp.vector(0, 0, 0), vp.color.yellow, vp.textures.metal, True)
+
+        self.particlelist.append(new_particle)
+
+        vp.wtext(text=f'Particle {len(self.particlelist)}:')
+        new_particle.make_widgets()
+        vp.scene.append_to_caption('\n')
+
+        self.b_add = vp.button(bind=self.button_add, text='ADD PARTICLE')
+
+
+
+
+
+
 
 
     def gforce(self, p1, p2):
@@ -163,10 +249,9 @@ class Simulation:
         return force_vec
 
 
-
     def run(self):
 
-        vp.scene.ambient = vp.color.gray(0)
+        vp.scene.ambient = vp.color.gray(0.5)
         vp.scene.autoscale = False
         vp.scene.range = 10
 
@@ -175,58 +260,47 @@ class Simulation:
         vp.scene.camera.follow(self.skybox)
 
         while True:
-            self.skybox.pos = self.particlelist[self.focus].particle_model.pos
+            if len(self.particlelist) > 0:
+                self.skybox.pos = self.particlelist[self.focus].particle_model.pos
             self.skybox.radius = vp.mag(vp.scene.camera.axis) * 8
 
             if self.running:
                 vp.rate = (self.rate)
+                if len(self.particlelist) == 0:
+                    pass
+                else:
+                    for particle1 in self.particlelist:
+                        particle1.totforce = vp.vector(0, 0, 0)
+                        for particle2 in self.particlelist:
+                            if particle1 != particle2:
+                                particle1.totforce += self.gforce(particle1, particle2)
+    
+                        particle1.particle_model.momentum = particle1.particle_model.momentum + particle1.totforce * self.delta_time
 
-                for particle1 in self.particlelist:
-                    particle1.totforce = vp.vector(0, 0, 0)
-                    for particle2 in self.particlelist:
-                        if particle1 != particle2:
-                            particle1.totforce += self.gforce(particle1, particle2)
+                        particle1.particle_model.pos = particle1.particle_model.pos + (
+                                    particle1.particle_model.momentum * self.delta_time) / particle1.particle_model.mass
 
-                    particle1.particle_model.momentum = particle1.particle_model.momentum + particle1.totforce * self.delta_time
+                        particle1.force_arrow.axis = (vp.log(vp.mag(particle1.totforce),
+                                                             10) + particle1.particle_model.radius) * (
+                                                                 particle1.totforce / vp.mag(particle1.totforce))
+                        particle1.force_arrow.pos = particle1.particle_model.pos
 
-                    particle1.particle_model.pos = particle1.particle_model.pos + (
-                                particle1.particle_model.momentum * self.delta_time) / particle1.particle_model.mass
-
-                    particle1.force_arrow.axis = (vp.log(vp.mag(particle1.totforce),
-                                                         10) + + particle1.particle_model.radius) * (
-                                                             particle1.totforce / vp.mag(particle1.totforce))
-                    particle1.force_arrow.pos = particle1.particle_model.pos
-
-                    particle1.velocity_arrow.axis = (vp.log(
-                        vp.mag(particle1.particle_model.momentum) / particle1.particle_model.mass,
-                        10) + particle1.particle_model.radius) * (particle1.particle_model.momentum / vp.mag(
-                        particle1.particle_model.momentum))
-                    particle1.velocity_arrow.pos = particle1.particle_model.pos
+                        particle1.velocity_arrow.axis = (vp.log(
+                            vp.mag(particle1.particle_model.momentum) / particle1.particle_model.mass,
+                            10) + particle1.particle_model.radius) * (particle1.particle_model.momentum / vp.mag(
+                            particle1.particle_model.momentum))
+                        particle1.velocity_arrow.pos = particle1.particle_model.pos
 
             self.time += self.delta_time
 
 
 my_simulation = Simulation()
-vp.scene.width = 800
+vp.scene.width = 1000
 vp.scene.height = 400
 vp.scene.range = 12
 vp.scene.lights = []
 
-star1 = Particle(vp.vector(-5, 0, 0), 2, 50000, vp.vector(0, 0, -40), vp.color.yellow, vp.textures.metal, True)
-star2 = Particle(vp.vector(5, 0, 0), 2, 50000, vp.vector(0, 0, 40), vp.color.yellow, vp.textures.metal, True)
 
-planet1 = Particle(vp.vector(0, 0, 40), 1, 100, vp.vector(35, 35, 0), vp.color.white, vp.textures.earth, False)
-
-planet2 = Particle(vp.vector(0, 0, -40), 1, 100, vp.vector(35, -35, 0), vp.color.white, vp.textures.earth, False)
-
-moon1 = Particle(vp.vector(0, 0, 42), 0.2, 0.1, vp.vector(30, 30, 0), vp.color.white, vp.textures.rough, False)
-
-my_simulation.particlelist.append(star1)
-my_simulation.particlelist.append(star2)
-my_simulation.particlelist.append(planet1)
-my_simulation.particlelist.append(planet2)
-my_simulation.particlelist.append(moon1)
-my_simulation.focus = 2
 my_simulation.running = True
 
 my_simulation.run()
