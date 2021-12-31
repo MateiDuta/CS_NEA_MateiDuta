@@ -4,26 +4,26 @@ from random import choice
 class Particle:
     def __init__(self, position, radius, mass, velocity, color, texture, emissive):
 
-        self.velocity = velocity
-        self.momentum = mass * self.velocity
-        self.position = position
         self.radius = radius
         self.mass = mass
+        self.velocity0 = velocity
+        self.position0 = position
+        self.momentum0 = mass * self.velocity0
         self.color = color
-        self.particle_model = vp.sphere(pos=self.position,
+        self.retain = 100
+        self.particle_model = vp.sphere(pos=self.position0,
                                         radius=self.radius,
                                         mass=self.mass,
-                                        momentum=self.momentum,
+                                        momentum=self.momentum0,
                                         color=self.color,
                                         texture={'file': texture},
                                         emissive=emissive,
                                         shininess=0,
+                                        make_trail=True,
+                                        retain=self.retain,
                                         )
-        vp.attach_trail(self.particle_model,
-                        radius=self.particle_model.radius/5,
-                        color=vp.color.white,
-                        retain=100
-                        )
+
+
 
         self.force_arrow = vp.cone(pos=self.particle_model.pos,
                                    radius=radius / 5,
@@ -40,16 +40,25 @@ class Particle:
                                       shininess=0)
 
     def get_vals(self):
-        vals = [self.particle_model.pos.x,
-                self.particle_model.pos.y,
-                self.particle_model.pos.z,
-                self.velocity.x,
-                self.velocity.y,
-                self.velocity.z,
-                self.particle_model.radius,
-                self.particle_model.mass
+        vals = [self.position0.x,
+                self.position0.y,
+                self.position0.z,
+                self.velocity0.x,
+                self.velocity0.y,
+                self.velocity0.z,
+                self.radius,
+                self.mass
                ]
         return vals
+
+    def reset_model(self):
+        self.momentum0 = self.mass * self.velocity0
+        self.particle_model.radius = self.radius
+        self.particle_model.mass = self.mass
+        self.particle_model.pos = self.position0
+        self.particle_model.momentum = self.momentum0
+        self.particle_model.clear_trail()
+        # self.particle_trail.clear_trail()
 
 class Sun(Particle):
     def __init__(self, position, radius, mass, velocity, color, texture):
@@ -65,12 +74,12 @@ class Planet(Particle):
         #
         # self.is_emissive()
     def get_valstext(self):
-        valstext = ' pos: (' + str(self.particle_model.pos.x) + \
-                           ', ' + str(self.particle_model.pos.y) + \
-                           ', ' + str(self.particle_model.pos.z) + ') ' + \
-                   ' vel: (' + str(self.velocity.x) + \
-                           ', ' + str(self.velocity.y) + \
-                           ', ' + str(self.velocity.z) + ') ' + \
-                    'radius: ' + str(self.particle_model.radius) + ', ' + \
-                    'mass: ' + str(self.particle_model.mass)
+        valstext = ' pos: (' + str(self.position0.x) + \
+                           ', ' + str(self.position0.y) + \
+                           ', ' + str(self.position0.z) + ') ' + \
+                   ' vel: (' + str(self.velocity0.x) + \
+                           ', ' + str(self.velocity0.y) + \
+                           ', ' + str(self.velocity0.z) + ') ' + \
+                    'radius: ' + str(self.radius) + ', ' + \
+                    'mass: ' + str(self.mass)
         return valstext

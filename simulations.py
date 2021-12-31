@@ -5,7 +5,7 @@ import particles
 class SolarSystem:
     def __init__(self):
         self.time = 0
-        self.delta_time = 1.0E-3
+        self.delta_time = 1.0E-1
 
         # Initialised value of newtons gravitational constant, 6.67e-11 to use real-world value.
         self.G = 1
@@ -17,7 +17,7 @@ class SolarSystem:
         self.valslist = []
         self.shininess = 1000
         self.radius = 200
-        self.rate = 24
+
         self.texture = "https://images.unsplash.com/photo-1475274047050-1d0c0975c63e?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8bm" \
                        "lnaHQlMjBza3l8ZW58MHx8MHx8&ixlib=rb-1.2.1&w=1000&q=80"
 
@@ -47,19 +47,19 @@ class SolarSystem:
         vp.scene.append_to_caption('  ')
 
         # - toggle the visibility of the trails
-        self.b_trails = vp.checkbox(bind=self.button_trails,
-                                    text='HIDE TRAILS'
+        self.b_trails = vp.button(bind=self.button_trails,
+                                    text='TOGGLE TRAILS'
                                     )
         vp.scene.append_to_caption('  ')
 
         # - toggle the drawing of gravitational force vectors
-        self.b_force = vp.checkbox(bind=self.button_force_arrows,
+        self.c_force = vp.checkbox(bind=self.checkbox_force_arrows,
                                    text='HIDE FORCES'
                                    )
         vp.scene.append_to_caption('  ')
 
         # - toggles the drawing of velocity vectors
-        self.b_velocity = vp.checkbox(bind=self.button_velocity_arrows,
+        self.c_velocity = vp.checkbox(bind=self.checkbox_velocity_arrows,
                                       text='HIDE VELOCITIES'
                                       )
         vp.scene.append_to_caption('\n\n')
@@ -96,6 +96,9 @@ class SolarSystem:
 
         self.b_add = vp.button(bind=self.button_add,
                                text='ADD PLANET')
+
+        self.b_delete = vp.button(bind=self.button_delete,
+                               text='DELETE PLANET')
         vp.scene.append_to_caption('\n\n')
         # vp.scene.append_to_caption('\n')
         # self.t_edit = vp.wtext(text='')
@@ -130,24 +133,26 @@ class SolarSystem:
             self.focus = 0
 
     def update_velocity_arrow(self, particle):
-        particle.velocity_arrow.axis = (vp.log(
-            vp.mag(particle.particle_model.momentum) / particle.particle_model.mass,
-            10) + particle.particle_model.radius) * (particle.particle_model.momentum / vp.mag(
-            particle.particle_model.momentum))
+        if ( (not particle.particle_model.mass == 0)
+              and (not vp.mag(particle.particle_model.momentum) == 0) ):
+            particle.velocity_arrow.axis = (vp.log(
+                vp.mag(particle.particle_model.momentum) / particle.particle_model.mass,
+                10) + particle.particle_model.radius) * (particle.particle_model.momentum / vp.mag(
+                particle.particle_model.momentum))
         particle.velocity_arrow.pos = particle.particle_model.pos
 
     def button_trails(self, b):
         # toggles the drawing of the trails
         for p in self.particlelist:
-            p.particle_model.clear_trail()
             p.particle_model.make_trail = not p.particle_model.make_trail
+            p.particle_model.clear_trail()
 
-    def button_force_arrows(self, b):
+    def checkbox_force_arrows(self, b):
         # toggles the drawing of the force vectors
         for p in self.particlelist:
             p.force_arrow.visible = not p.force_arrow.visible
 
-    def button_velocity_arrows(self, b):
+    def checkbox_velocity_arrows(self, b):
         # toggles the drawing of the velocity vectors
         for p in self.particlelist:
             p.velocity_arrow.visible = not p.velocity_arrow.visible
@@ -169,7 +174,7 @@ class SolarSystem:
         # only allow up to 9 planets
         if len(self.particlelist) < 10:
 
-            self.stop_simulation()
+            self.button_restart(0)
             self.b_load.delete()
 
             # get the number of current, minus 1 because the first particle is the sun
@@ -195,8 +200,8 @@ class SolarSystem:
         planet = particles.Planet(position=position,
                                   radius=1, mass=1,
                                   velocity=velocity,
-                                  color=vp.color.yellow,
-                                  texture=vp.textures.metal,
+                                  color=vp.color.white,
+                                  texture=vp.textures.earth,
                                   name=name)
 
         self.particlelist.append(planet)
@@ -220,6 +225,15 @@ class SolarSystem:
         v_text = vp.wtext(text=valstext)
         self.valslist.append(v_text)
 
+    def button_delete(self):
+        if len(self.particlelist) > 1:
+            d_particle = self.particlelist[-1]
+            d_particle.particle_model.visible = False
+            d_particle.force_arrow.visible = False
+            d_particle.velocity_arrow.visible = False
+            self.particlelist.pop()
+
+
 
     def set_value(self, i):
         if type(i.number) == int:
@@ -228,27 +242,23 @@ class SolarSystem:
             # the index of the planet is given by the last character of the prompt
             index = int(i.prompt[-1])
             if var == "xpos":
-                self.particlelist[index].particle_model.pos.x = i.number
+                self.particlelist[index].position0.x = i.number
             elif var == "ypos":
-                self.particlelist[index].particle_model.pos.y = i.number
+                self.particlelist[index].position0.y = i.number
             elif var == "zpos":
-                self.particlelist[index].particle_model.pos.z = i.number
+                self.particlelist[index].position0.z = i.number
             if var == "xvel":
-                self.particlelist[index].velocity.x = i.number
-                self.particlelist[index].particle_model.momentum.x = self.particlelist[index].velocity.x * self.particlelist[index].particle_model.mass
-                self.update_velocity_arrow(self.particlelist[index])
+                self.particlelist[index].velocity0.x = i.number
             elif var == "yvel":
-                self.particlelist[index].velocity.y = i.number
-                self.particlelist[index].particle_model.momentum.y = self.particlelist[index].velocity.y * self.particlelist[index].particle_model.mass
-                self.update_velocity_arrow(self.particlelist[index])
+                self.particlelist[index].velocity0.y = i.number
             elif var == "zvel":
-                self.particlelist[index].velocity.z = i.number
-                self.particlelist[index].particle_model.momentum.z = self.particlelist[index].velocity.z * self.particlelist[index].particle_model.mass
-                self.update_velocity_arrow(self.particlelist[index])
+                self.particlelist[index].velocity0.z = i.number
             elif var == "rad ":
-                self.particlelist[index].particle_model.radius = i.number
+                self.particlelist[index].radius = i.number
             elif var == "mass":
-                self.particlelist[index].particle_model.mass = i.number
+                self.particlelist[index].mass = i.number
+            for p in self.particlelist:
+                p.reset_model()
             # valstext = self.assign_valstext(index)
             valstext = self.particlelist[index].get_valstext()
             self.valslist[index - 1].text = valstext
@@ -263,21 +273,21 @@ class SolarSystem:
             # the prompt[:4] then gives the variable to set and prompt[-1] then gives the planet index
             self.veditlist[index - 1].prompt = m.selected
             if var == "xpos":
-                self.veditlist[index - 1].text = self.particlelist[index].particle_model.pos.x
+                self.veditlist[index - 1].text = self.particlelist[index].position0.x
             elif var == "ypos":
-                self.veditlist[index - 1].text = self.particlelist[index].particle_model.pos.y
+                self.veditlist[index - 1].text = self.particlelist[index].position0.y
             elif var == "zpos":
-                self.veditlist[index - 1].text = self.particlelist[index].particle_model.pos.z
+                self.veditlist[index - 1].text = self.particlelist[index].position0.z
             elif var == "xvel":
-                self.veditlist[index - 1].text = self.particlelist[index].velocity.x
+                self.veditlist[index - 1].text = self.particlelist[index].velocity0.x
             elif var == "yvel":
-                self.veditlist[index - 1].text = self.particlelist[index].velocity.y
+                self.veditlist[index - 1].text = self.particlelist[index].velocity0.y
             elif var == "zvel":
-                self.veditlist[index - 1].text = self.particlelist[index].velocity.z
+                self.veditlist[index - 1].text = self.particlelist[index].velocity0.z
             elif var == "rad ":
-                self.veditlist[index - 1].text = self.particlelist[index].particle_model.radius
+                self.veditlist[index - 1].text = self.particlelist[index].radius
             elif var == "mass":
-                self.veditlist[index - 1].text = self.particlelist[index].particle_model.mass
+                self.veditlist[index - 1].text = self.particlelist[index].mass
             self.veditlist[index - 1].visible = True
         else:
             self.veditlist[index - 1].text = 'first choose the variable'
@@ -285,8 +295,8 @@ class SolarSystem:
 
     def button_save(self):
         vals = []
-        for particle in self.particlelist[1:]:
-            vals.append(particle.get_vals())
+        for p in self.particlelist[1:]:
+            vals.append(p.get_vals())
         np.savetxt("solar_system.csv", vals, delimiter=",")
 
     def button_load(self):
@@ -300,15 +310,13 @@ class SolarSystem:
             self.add_planet(index + 1, position, velocity, radius, mass)
 
     def button_restart(self, b):
-        pass
-        self.running = False
-        self.b_startstop.text = "▶️"
-
-        for particle in self.particlelist[1:]:
-            attributes = particle.get_vals()
-
-
-
+        if len(self.particlelist) > 1:
+            for p in self.particlelist:
+                p.reset_model()
+                p.particle_model.clear_trail()
+            # toggles the running state
+            self.running = False
+            self.b_startstop.text = '⏸️'
 
     def gforce(self, p1, p2):
         # Modelled using euler cromer method
@@ -347,7 +355,7 @@ class SolarSystem:
             self.skybox.radius = vp.mag(vp.scene.camera.axis) * 8
 
             if self.running:
-                vp.rate = (self.rate)
+
                 if len(self.particlelist) == 0:
                     pass
                 else:
@@ -370,3 +378,5 @@ class SolarSystem:
                         self.update_velocity_arrow(particle1)
 
             self.time += self.delta_time
+            vp.rate(24)
+
