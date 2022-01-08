@@ -1,8 +1,9 @@
 import vpython as vp
-from random import choice
+
 
 class Particle:
-    def __init__(self, position, radius, mass, velocity, color, texture, emissive):
+    def __init__(self, position, radius, mass,
+                 velocity, color, texture, emissive):
 
         self.radius = radius
         self.mass = mass
@@ -23,8 +24,6 @@ class Particle:
                                         retain=self.retain,
                                         )
 
-
-
         self.force_arrow = vp.cone(pos=self.particle_model.pos,
                                    radius=radius / 5,
                                    color=vp.color.red,
@@ -40,6 +39,14 @@ class Particle:
                                       shininess=0)
 
     def get_vals(self):
+        """
+            Returns the position, velocity, radius and mass for the particle
+
+            Returns:
+            list with parameter values
+
+        """
+
         vals = [self.position0.x,
                 self.position0.y,
                 self.position0.z,
@@ -48,38 +55,53 @@ class Particle:
                 self.velocity0.z,
                 self.radius,
                 self.mass
-               ]
+                ]
         return vals
 
     def reset_model(self):
+        """
+            Reset the values of the position, momentum,
+            radius and mass for the particle
+        """
+
         self.momentum0 = self.mass * self.velocity0
         self.particle_model.radius = self.radius
         self.particle_model.mass = self.mass
         self.particle_model.pos = self.position0
         self.particle_model.momentum = self.momentum0
         self.particle_model.clear_trail()
-        # self.particle_trail.clear_trail()
+
 
 class Sun(Particle):
     def __init__(self, position, radius, mass, velocity, color, texture):
-        super().__init__(position, radius, mass, velocity, color, texture, True)
+        super().__init__(position, radius, mass,
+                         velocity, color, texture, True)
+        print('Created sun')
+
 
 class Planet(Particle):
-    def __init__(self, position, radius, mass, velocity, color, texture, name):
+    def __init__(self, position, radius, mass,
+                 velocity, color, texture, name):
         self.name = name
-        super().__init__(position, radius, mass, velocity, color, texture, False)
-        print("Created", self.name)
+        super().__init__(position, radius, mass,
+                         velocity, color, texture, False)
+        print('Created', self.name)
 
-        # self.lamp = vp.local_light(pos=self.particle_model.pos, colour=vp.color.white)
-        #
-        # self.is_emissive()
     def get_valstext(self):
+        """
+            Get the position, velocity,
+            radius and mass for a planet in a string
+
+            Returns:
+            a readable string with the values
+        """
+
         valstext = ' pos: (' + str(self.position0.x) + \
-                           ', ' + str(self.position0.y) + \
-                           ', ' + str(self.position0.z) + ') ' + \
+                   ', ' + str(self.position0.y) + \
+                   ', ' + str(self.position0.z) + ') ' + \
                    ' vel: (' + str(self.velocity0.x) + \
-                           ', ' + str(self.velocity0.y) + \
-                           ', ' + str(self.velocity0.z) + ') ' + \
-                    'radius: ' + str(self.radius) + ', ' + \
-                    'mass: ' + str(self.mass)
+                   ', ' + str(self.velocity0.y) + \
+                   ', ' + str(self.velocity0.z) + ') ' + \
+                   'radius: ' + str(self.radius) + ', ' + \
+                   'mass: ' + str(self.mass)
         return valstext
